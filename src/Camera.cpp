@@ -18,6 +18,8 @@ color Camera::ray_color(const Ray& r, const Hittable& world) const{
 
 void Camera::initialize(){
 
+    _pixel_samples_scale = 1.0 / _samples_per_pixel;
+
     _height = static_cast<int>(_width / _aspect_ratio);
     _height = (_height < 1) ? 1 : _height;
 
@@ -52,12 +54,30 @@ void Camera::render(const Hittable& world){
         std::clog << "\rScanlines remaining: " << (_height - j) << ' ' << std::flush;
 
         for(int i = 0; i < _width; i++){
-            auto pixel_center = _pixel00_loc + (static_cast<float>(i) * _pixel_delta_u) + (static_cast<float>(j) * _pixel_delta_v);
-            auto ray_direction = pixel_center - _center;
-            Ray r(_center, ray_direction);
-            color pixel = ray_color(r, world);
-            write_color(std::cout, pixel);
+            color pixel_color(0,0,0);
+            for (int sample = 0; sample < _samples_per_pixel; sample++) {
+                Ray r = getRay(i, j);
+                pixel_color += ray_color(r, world);
+            }
+            write_color(std::cout, _pixel_samples_scale * pixel_color);
         }
     }
     std::clog << "\rDone.                 \n";
+}
+
+Ray Camera::getRay(int i, int j) const {
+    auto offset = sample_square();
+    auto pixel_sample = _pixel00_loc
+                    + ((i + offset.x) * _pixel_delta_u)
+                    + ((j + offset.y) * _pixel_delta_v);
+
+    auto origin = _center;
+    auto direction = pixel_sample - origin;
+
+    return Ray(origin, direction);
+}
+
+glm::vec3 Camera::sample_square() const{
+    // algo entre [-0.5, +0.5]
+    return glm::vec3(random_float() - 0.5f, random_float() - 0.5f, 0);
 }
