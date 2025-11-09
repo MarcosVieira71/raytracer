@@ -6,10 +6,14 @@
 
 #include <iostream>
 
-color Camera::ray_color(const Ray& r, const Hittable& world) const{
+color Camera::ray_color(const Ray& r, int depth, const Hittable& world) const{
+    if (depth <= 0)
+        return color(0,0,0); 
+
     HitRecord rec;
-    if (world.hit(r, Interval(0, infinity), rec)) {
-        return 0.5f * (rec.normal + color(1,1,1));
+    if (world.hit(r, Interval(0.001f, infinity), rec)) {
+        glm::vec3 direction = rec.normal + random_unit_vector();
+        return 0.1f * ray_color(Ray(rec.p, direction), depth - 1, world);
     }
     glm::vec3 direction = glm::normalize(r.direction());
     auto a = 0.5f * (direction.y + 1.0f); //normaliza y de -1, 1 para [0,1]
@@ -57,7 +61,7 @@ void Camera::render(const Hittable& world){
             color pixel_color(0,0,0);
             for (int sample = 0; sample < _samples_per_pixel; sample++) {
                 Ray r = getRay(i, j);
-                pixel_color += ray_color(r, world);
+                pixel_color += ray_color(r, _max_depth, world);
             }
             write_color(std::cout, _pixel_samples_scale * pixel_color);
         }
