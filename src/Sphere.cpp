@@ -11,7 +11,7 @@ Sphere::Sphere(const glm::vec3& center, float radius) : _center(center), _radius
 {}
 
 
-bool Sphere::hit(const Ray& r, float ray_tMin, float ray_tMax, HitRecord& rec) const
+bool Sphere::hit(const Ray& r, const Interval& ray_t, HitRecord& rec) const
 {
     glm::vec3 ocvec = _center - r.origin();
     auto a = glm::length2(r.direction());
@@ -25,14 +25,15 @@ bool Sphere::hit(const Ray& r, float ray_tMin, float ray_tMax, HitRecord& rec) c
     auto sqrtd = std::sqrt(delta);
 
     auto root = (h - sqrtd) / a;
-    if (root <= ray_tMin || ray_tMax <= root) {
+    if (!ray_t.surrounds(root)) {
         root = (h + sqrtd) / a;
-        if (root <= ray_tMin || ray_tMax <= root)
+        if (!ray_t.surrounds(root))
             return false;
     }
 
     rec.t = root;
     rec.p = r.at(rec.t);
-    rec.normal = (rec.p - _center) / _radius;
+    glm::vec3 outwardNormal = (rec.p - _center) / _radius; //Normalizado
+    rec.setFaceNormal(r, outwardNormal);
     return true;
 }
