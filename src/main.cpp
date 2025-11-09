@@ -2,18 +2,33 @@
 #include "Ray.h"
 #include <iostream>
 
-bool hit_sphere(const glm::vec3& center, double radius, const Ray& r) {
+#define GLM_ENABLE_EXPERIMENTAL
+
+#include <glm/gtx/norm.hpp>
+
+double hit_sphere(const glm::vec3& center, double radius, const Ray& r) {
     glm::vec3 ocvec = center - r.origin();
-    auto a = dot(r.direction(), r.direction());
-    auto b = -2.0f * dot(r.direction(), ocvec);
-    auto c = dot(ocvec, ocvec) - radius*radius;
-    auto delta = b*b - 4*a*c; 
-    return (delta >= 0); //Delta < 0 -> Não intercepta a esfera, = 0 intercepta em 1 ponto, > 0 intercepta em dois pontos 
+    auto a = glm::length2(r.direction());
+    auto h = glm::dot(r.direction(), ocvec);
+    auto c = glm::length2(ocvec) - radius*radius;
+    auto delta = h*h - 4*a*c; 
+    
+    //Delta < 0 -> Não intercepta a esfera, = 0 intercepta em 1 ponto, > 0 intercepta em dois pontos 
+
+    if (delta < 0) {
+        return -1.0;
+    } else {
+        return (h - std::sqrt(delta) ) / (2.0*a);
+    }
 }
 
 color ray_color(const Ray& r) {
-    if (hit_sphere(glm::vec3(0,0,-1), 0.5f, r))
-        return color(0.5f, 0.0f, 0.5f);
+    auto t = hit_sphere(glm::vec3(0,0,-1), 0.5, r);
+    if (t > 0.0) {
+        auto N = glm::normalize(r.at(t) - glm::vec3(0,0,-1));
+        return 0.5f * color(N.x + 1.0f, N.y  +1.0f, N.z +1.0f);
+    }
+    
     glm::vec3 direction = glm::normalize(r.direction());
     auto a = 0.5f * (direction.y + 1.0f); //normaliza y de -1, 1 para [0,1]
     return (1.0f-a) * color(1.0, 1.0, 1.0) + a * color(0.5, 0.7, 1.0); //Faz a interpolacao linear
