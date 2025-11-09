@@ -4,6 +4,9 @@
 
 #include "Ray.h"
 #include "Interval.h"
+#include <memory>
+
+class Material;
 
 class HitRecord
 {
@@ -12,6 +15,7 @@ class HitRecord
         glm::vec3 normal;
         float t;
         bool isFrontFace;
+        std::shared_ptr<Material> mat;
     
     void setFaceNormal(const Ray&  r, const glm::vec3& outwardNormal)
     {

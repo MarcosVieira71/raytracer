@@ -80,3 +80,6 @@ inline glm::vec3 random_on_hemisphere(const glm::vec3& normal) {
         return -onSphereVec;
 }
 
+inline bool near_zero(const glm::vec3& v, float eps = 1e-8f) {
+    return glm::all(glm::lessThan(glm::abs(v), glm::vec3(eps)));
+}

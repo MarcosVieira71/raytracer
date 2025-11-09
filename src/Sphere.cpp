@@ -7,7 +7,7 @@
 #include <glm/gtx/norm.hpp>
 
 
-Sphere::Sphere(const glm::vec3& center, float radius) : _center(center), _radius(std::fmax(0,radius))
+Sphere::Sphere(const glm::vec3& center, float radius, std::shared_ptr<Material> mat) : _center(center), _radius(std::fmax(0,radius)), _material(mat)
 {}
 
 
@@ -33,6 +33,7 @@ bool Sphere::hit(const Ray& r, const Interval& ray_t, HitRecord& rec) const
 
     rec.t = root;
     rec.p = r.at(rec.t);
+    rec.mat = _material;
     glm::vec3 outwardNormal = (rec.p - _center) / _radius; //Normalizado
     rec.setFaceNormal(r, outwardNormal);
     return true;

@@ -3,6 +3,7 @@
 #include "Ray.h"
 #include "Hittable.h"
 #include "Interval.h"
+#include "Material.h"
 
 #include <iostream>
 
@@ -12,8 +13,11 @@ color Camera::ray_color(const Ray& r, int depth, const Hittable& world) const{
 
     HitRecord rec;
     if (world.hit(r, Interval(0.001f, infinity), rec)) {
-        glm::vec3 direction = rec.normal + random_unit_vector();
-        return 0.1f * ray_color(Ray(rec.p, direction), depth - 1, world);
+        Ray scattered;
+        color attenuation;
+        if (rec.mat->scatter(r, rec, attenuation, scattered))
+            return attenuation * ray_color(scattered, depth-1, world);
+        return color(0,0,0);
     }
     glm::vec3 direction = glm::normalize(r.direction());
     auto a = 0.5f * (direction.y + 1.0f); //normaliza y de -1, 1 para [0,1]
