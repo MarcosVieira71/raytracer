@@ -31,23 +31,29 @@ void Camera::initialize(){
     _height = static_cast<int>(_width / _aspect_ratio);
     _height = (_height < 1) ? 1 : _height;
 
-    auto focal_length = 1.0f;
+    float focal_length = (_lookfrom - _lookat).length();
 
-    auto viewport_height = 2.0f;
+    auto theta = degrees_to_radians(_vfov);
+    auto h = std::tan(theta/2);
+    auto viewport_height = 2 * h * focal_length;
+
     auto viewport_width = viewport_height * (_width / (float)_height);
 
-    _center = glm::vec3(0, 0, 0);
+    _center = _lookfrom;
+
+    _w = glm::normalize(_lookfrom - _lookat);
+    _u = glm::normalize(glm::cross(_vup, _w));
+    _v = glm::cross(_w, _u);
 
     //vetores para representar as dimensões físicas do viewport
-    auto viewport_vu = glm::vec3(viewport_width, 0, 0);
-    auto viewport_vv = glm::vec3(0, -viewport_height, 0);
-
+    glm::vec3 viewport_vu = viewport_width * _u;    
+    glm::vec3 viewport_vv = viewport_height * - _v; 
     //Representa o tamanho do pixel no espaco da viewport
     _pixel_delta_u = viewport_vu / static_cast<float>(_width);
     _pixel_delta_v = viewport_vv / static_cast<float>(_height);
 
 
-    auto viewport_upper_left = _center - glm::vec3(0, 0, focal_length) - viewport_vu / 2.0f - viewport_vv / 2.0f;
+    auto viewport_upper_left = _center - (focal_length * _w) - viewport_vu/ 2.0f - viewport_vv/2.0f;
 
     //// Centro do pixel (0,0) dentro do viewport (meio pixel para dentro)
     _pixel00_loc = viewport_upper_left + 0.5f * (_pixel_delta_u + _pixel_delta_v);
