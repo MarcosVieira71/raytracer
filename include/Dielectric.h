@@ -2,10 +2,10 @@
 
 #include "Material.h"
 
-class Dieletric : public Material
+class Dielectric : public Material
 {
     public:
-        Dieletric(float refraction_index);
+        Dielectric(float refraction_index);
 
         bool scatter(const Ray& r_in, const HitRecord& rec, color& attenuation, Ray& scattered) const override;
 

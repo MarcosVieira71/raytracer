@@ -1,11 +1,11 @@
-#include "Dieletric.h"
+#include "Dielectric.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/type_ptr.hpp>
-Dieletric::Dieletric(float refraction_index) : _refraction_index(refraction_index) 
+Dielectric::Dielectric(float refraction_index) : _refraction_index(refraction_index) 
 {}
 
-bool Dieletric::scatter(const Ray& r_in, const HitRecord& rec, color& attenuation, Ray& scattered) const
+bool Dielectric::scatter(const Ray& r_in, const HitRecord& rec, color& attenuation, Ray& scattered) const
 {
     attenuation = color(1.0, 1.0, 1.0);
     float ri = rec.isFrontFace ? (1.0/_refraction_index) : _refraction_index;
@@ -26,7 +26,7 @@ bool Dieletric::scatter(const Ray& r_in, const HitRecord& rec, color& attenuatio
     return true;
     
 }
-float Dieletric::reflectance(float cosine, float refraction_index) {
+float Dielectric::reflectance(float cosine, float refraction_index) {
     auto r0 = (1 - refraction_index) / (1 + refraction_index);
     r0 = r0*r0;
     return r0 + (1-r0)*std::pow((1 - cosine),5);

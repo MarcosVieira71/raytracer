@@ -40,6 +40,15 @@ inline void write_color(std::ostream& out, const color& pixel) {
     out << rbyte << ' ' << gbyte << ' ' << bbyte << '\n';
 }
 
+inline void write_color(unsigned char* out3, const color& pixel) {
+    static const Interval intensity(0.000, 0.999);
+
+    out3[0] = static_cast<unsigned char>(255.999 * intensity.clamp(linear_to_gamma(pixel.r)));
+    out3[1] = static_cast<unsigned char>(255.999 * intensity.clamp(linear_to_gamma(pixel.g)));
+    out3[2] = static_cast<unsigned char>(255.999 * intensity.clamp(linear_to_gamma(pixel.b)));
+}
+
+
 inline float random_float() {
     static std::uniform_real_distribution<float> distribution(0.0, 1.0);
     static std::mt19937 generator;
@@ -78,6 +87,14 @@ inline glm::vec3 random_on_hemisphere(const glm::vec3& normal) {
         return onSphereVec;
     else
         return -onSphereVec;
+}
+
+inline glm::vec3 random_in_unit_disk() {
+    while (true) {
+        auto p = glm::vec3(random_float(-1,1), random_float(-1,1), 0);
+        if (glm::length2(p) < 1)
+            return p;
+    }
 }
 
 inline bool near_zero(const glm::vec3& v, float eps = 1e-8f) {

@@ -4,8 +4,14 @@
 #include "Hittable.h"
 #include "Interval.h"
 #include "Material.h"
+#include "PixelBuffer.h"
 
 #include <iostream>
+#include <vector>
+
+Camera::Camera(){
+    initialize();
+}
 
 color Camera::ray_color(const Ray& r, int depth, const Hittable& world) const{
     if (depth <= 0)
@@ -31,11 +37,10 @@ void Camera::initialize(){
     _height = static_cast<int>(_width / _aspect_ratio);
     _height = (_height < 1) ? 1 : _height;
 
-    float focal_length = (_lookfrom - _lookat).length();
-
     auto theta = degrees_to_radians(_vfov);
     auto h = std::tan(theta/2);
-    auto viewport_height = 2 * h * focal_length;
+
+    auto viewport_height = 2 * h * _focus_dist;
 
     auto viewport_width = viewport_height * (_width / (float)_height);
 
@@ -53,16 +58,18 @@ void Camera::initialize(){
     _pixel_delta_v = viewport_vv / static_cast<float>(_height);
 
 
-    auto viewport_upper_left = _center - (focal_length * _w) - viewport_vu/ 2.0f - viewport_vv/2.0f;
+    auto viewport_upper_left = _center - (_focus_dist * _w) - viewport_vu/ 2.0f - viewport_vv/2.0f;
 
     //// Centro do pixel (0,0) dentro do viewport (meio pixel para dentro)
     _pixel00_loc = viewport_upper_left + 0.5f * (_pixel_delta_u + _pixel_delta_v);
 
+    auto defocus_radius = _focus_dist * std::tan(degrees_to_radians(_defocus_angle / 2));
+    _defocus_disk_u = _u * defocus_radius;
+    _defocus_disk_v = _v * defocus_radius;
 }
 
-void Camera::render(const Hittable& world){
-    initialize();
-    std::cout << "P3\n" << _width << ' ' << _height << "\n255\n";
+void Camera::render(const Hittable& world, PixelBuffer& buffer, std::function<void(int)> updateCallback){
+    std::vector<unsigned char> pixels(_width * _height * 3);
 
     for(int j = 0; j < _height; j++){
         std::clog << "\rScanlines remaining: " << (_height - j) << ' ' << std::flush;
@@ -73,7 +80,13 @@ void Camera::render(const Hittable& world){
                 Ray r = getRay(i, j);
                 pixel_color += ray_color(r, _max_depth, world);
             }
-            write_color(std::cout, _pixel_samples_scale * pixel_color);
+            color final_color = _pixel_samples_scale * pixel_color;
+
+            unsigned char* px = buffer.pixel(i, j);
+            write_color(px, final_color);
+        }
+        if(updateCallback) {
+            updateCallback(j);
         }
     }
     std::clog << "\rDone.                 \n";
@@ -87,6 +100,7 @@ Ray Camera::getRay(int i, int j) const {
 
     auto origin = _center;
     auto direction = pixel_sample - origin;
+    auto ray_origin = (_defocus_angle <= 0) ? _center : defocus_disk_sample();
 
     return Ray(origin, direction);
 }
@@ -94,4 +108,16 @@ Ray Camera::getRay(int i, int j) const {
 glm::vec3 Camera::sample_square() const{
     // algo entre [-0.5, +0.5]
     return glm::vec3(random_float() - 0.5f, random_float() - 0.5f, 0);
+}
+
+glm::vec3 Camera::defocus_disk_sample() const {
+    auto p = random_in_unit_disk();
+    return _center + (p[0] * _defocus_disk_u) + (p[1] * _defocus_disk_v);
+}
+
+int Camera::width(){
+    return _width;
+}
+int Camera::height(){
+    return _height;
 }
