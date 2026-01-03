@@ -63,9 +63,20 @@ int main(void)
     PixelBuffer buffer(cam.width(), cam.height());
     WindowSDL window(cam.width(), cam.height());
 
-    cam.render(world, buffer, [&](int line) {
-        window.update(buffer);  // desenha a textura
-    });    
+    std::atomic<bool> done{ false };
+
+    std::thread render_thread([&]() {
+        cam.render(world, buffer, nullptr);
+        done.store(true, std::memory_order_release);
+    });
+
+    while (!done.load(std::memory_order_acquire)) {
+        window.update(buffer);
+        SDL_Delay(16);        
+    }
+
+    render_thread.join();
+
     stbi_write_jpg("../images/output.jpg", buffer.width, buffer.height, 3, buffer.data.data(), 100);
 
     return 0;

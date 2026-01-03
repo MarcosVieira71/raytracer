@@ -8,6 +8,8 @@
 
 #include <iostream>
 #include <vector>
+#include <omp.h>
+
 
 Camera::Camera(){
     initialize();
@@ -68,28 +70,31 @@ void Camera::initialize(){
     _defocus_disk_v = _v * defocus_radius;
 }
 
-void Camera::render(const Hittable& world, PixelBuffer& buffer, std::function<void(int)> updateCallback){
-    std::vector<unsigned char> pixels(_width * _height * 3);
+void Camera::render(const Hittable& world,
+                    PixelBuffer& buffer)
+{
+    #pragma omp parallel
+    {
+        #pragma omp single
+        std::cout << "OpenMP threads: "
+                  << omp_get_num_threads()
+                  << std::endl;
+    }
 
-    for(int j = 0; j < _height; j++){
-        std::clog << "\rScanlines remaining: " << (_height - j) << ' ' << std::flush;
-
-        for(int i = 0; i < _width; i++){
+    #pragma omp parallel for schedule(dynamic, 1)
+    for (int j = 0; j < _height; j++) {
+        for (int i = 0; i < _width; i++) {
             color pixel_color(0,0,0);
-            for (int sample = 0; sample < _samples_per_pixel; sample++) {
+
+            for (int s = 0; s < _samples_per_pixel; s++) {
                 Ray r = getRay(i, j);
                 pixel_color += ray_color(r, _max_depth, world);
             }
-            color final_color = _pixel_samples_scale * pixel_color;
 
-            unsigned char* px = buffer.pixel(i, j);
-            write_color(px, final_color);
-        }
-        if(updateCallback) {
-            updateCallback(j);
+            write_color(buffer.pixel(i, j),
+                        _pixel_samples_scale * pixel_color);
         }
     }
-    std::clog << "\rDone.                 \n";
 }
 
 Ray Camera::getRay(int i, int j) const {

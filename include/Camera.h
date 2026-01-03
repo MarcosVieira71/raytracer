@@ -13,7 +13,7 @@ class Camera {
   public:
     Camera();
 
-    void render(const Hittable& world, PixelBuffer& buffer, std::function<void(int)> updateCallback);
+    void render(const Hittable& world, PixelBuffer& buffer);
     int width();
     int height();
 
