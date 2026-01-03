@@ -10,6 +10,8 @@
 
 #include <iostream>
 #include <memory>
+#include <thread>
+#include <atomic>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
@@ -66,7 +68,7 @@ int main(void)
     std::atomic<bool> done{ false };
 
     std::thread render_thread([&]() {
-        cam.render(world, buffer, nullptr);
+        cam.render(world, buffer);
         done.store(true, std::memory_order_release);
     });
 
